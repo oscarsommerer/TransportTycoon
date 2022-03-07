@@ -11,6 +11,7 @@ let addEdge (d, a, b) graph =
     |> List.append [(d, b, a)]
     |> Map.add a <| graph
 
+// From tuples to map of nodes and bi-directional edges
 let toGraph (tuples) =
     tuples
     |> Seq.fold (fun g (_, a, b) -> g |> Map.add a [] |> Map.add b []) Map.empty
@@ -21,10 +22,13 @@ let addToFrontier (distance, node, parent) explored (frontier: IPriorityQueue<'B
     if not ((Set.contains node explored) || nodeInFrontier) then
         PriorityQueue.insert (distance, node, parent) frontier
     elif nodeInFrontier then
-        Heap.toSeq (frontier :?> Heap<'B * 'A * 'A>) |> Seq.map (fun (d, b, p) -> if node = b && distance < d then (distance, b, parent) else (d, b, p)) |> Heap.ofSeq false :> IPriorityQueue<'B * 'A * 'A>
+        Heap.toSeq (frontier :?> Heap<'B * 'A * 'A>) 
+        |> Seq.map (fun (d, b, p) -> if node = b && distance < d then (distance, b, parent) else (d, b, p)) 
+        |> Heap.ofSeq false :> IPriorityQueue<'B * 'A * 'A>
     else
         frontier
 
+// simplified uniform cost search
 let rec find dest graph frontier explored path =
     let (_, node, parent), frontier' = PriorityQueue.pop frontier
 
@@ -37,6 +41,7 @@ let rec find dest graph frontier explored path =
         let frontier'' = graph |> Map.find node |> List.fold (fun s n -> addToFrontier n explored' s) frontier'
         find dest graph frontier'' explored' ([(node, parent)] @ path)
 
+// follow traversed paths from destination to source to find the optimal solution
 let getSolution path =
     let traversedPaths = path |> List.fold (fun s (a, b) -> Map.add a b s) Map.empty
     let rec next a =
