@@ -2,6 +2,8 @@ open System
 open FSharp.Data
 open FSharpx.Collections
 
+type Edge = (Decimal * string * string)
+
 let toTuples (rows: CsvRow seq) = rows |> Seq.map(fun r -> r.["km"].AsDecimal(), r.["A"], r.["B"])
 
 let addEdge (d, a, b) graph =
@@ -17,29 +19,30 @@ let toGraph (tuples) =
     |> Seq.fold (fun g (_, a, b) -> g |> Map.add a [] |> Map.add b []) Map.empty
     |> Seq.fold (fun g (d, a, b) -> g |> addEdge (d, a, b) |> addEdge (d, b, a)) <| tuples
 
-let addToFrontier (distance, node, parent) explored (frontier: IPriorityQueue<'B * 'A * 'A>) =
-    let nodeInFrontier = Heap.toSeq (frontier :?> Heap<'B * 'A * 'A>) |> Seq.fold (fun s (_, b, _) -> s || node = b) false
+let addToFrontier (distance, node, parent) explored (frontier: IPriorityQueue<Edge>) =
+    let nodeInFrontier = Heap.toSeq (frontier :?> Heap<Edge>) |> Seq.fold (fun s (_, b, _) -> s || node = b) false
     if not ((Set.contains node explored) || nodeInFrontier) then
         PriorityQueue.insert (distance, node, parent) frontier
     elif nodeInFrontier then
-        Heap.toSeq (frontier :?> Heap<'B * 'A * 'A>) 
+        Heap.toSeq (frontier :?> Heap<Edge>) 
         |> Seq.map (fun (d, b, p) -> if node = b && distance < d then (distance, b, parent) else (d, b, p)) 
-        |> Heap.ofSeq false :> IPriorityQueue<'B * 'A * 'A>
+        |> Heap.ofSeq false :> IPriorityQueue<Edge>
     else
         frontier
 
 // simplified uniform cost search
-let rec find dest graph frontier explored path =
-    let (_, node, parent), frontier' = PriorityQueue.pop frontier
-
-    if node = dest then
-        Some ([(node, parent)] @ path)
-    elif frontier.IsEmpty then
+let rec find dest graph (frontier: IPriorityQueue<Edge>) explored path =
+    if frontier.IsEmpty then
         None
-    else 
-        let explored' = Set.add node explored
-        let frontier'' = graph |> Map.find node |> List.fold (fun s n -> addToFrontier n explored' s) frontier'
-        find dest graph frontier'' explored' ([(node, parent)] @ path)
+    else
+        let (_, node, parent), frontier' = PriorityQueue.pop frontier
+
+        if node = dest then
+            Some ([(node, parent)] @ path)
+        else 
+            let explored' = Set.add node explored
+            let frontier'' = graph |> Map.find node |> List.fold (fun s n -> addToFrontier n explored' s) frontier'
+            find dest graph frontier'' explored' ([(node, parent)] @ path)
 
 // follow traversed paths from destination to source to find the optimal solution
 let getSolution path =
