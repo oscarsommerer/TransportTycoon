@@ -28,14 +28,14 @@ let addToFrontier (distance, node, parent) explored (frontier: IPriorityQueue<'B
 let rec find dest graph frontier explored path =
     let (_, node, parent), frontier' = PriorityQueue.pop frontier
 
-    if frontier.IsEmpty then
+    if node = dest then
+        Some ([(node, parent)] @ path)
+    elif frontier.IsEmpty then
         None
-    elif node = dest then
-        Some (path @ [(node, parent)])
     else 
         let explored' = Set.add node explored
-        let frontier'' = Map.find node graph |> List.fold (fun s n -> addToFrontier n explored' s) frontier'
-        find dest graph frontier'' explored' (path @ [(node, parent)])
+        let frontier'' = graph |> Map.find node |> List.fold (fun s n -> addToFrontier n explored' s) frontier'
+        find dest graph frontier'' explored' ([(node, parent)] @ path)
 
 let getSolution path =
     let traversedPaths = path |> List.fold (fun s (a, b) -> Map.add a b s) Map.empty
@@ -45,7 +45,6 @@ let getSolution path =
         | Some b -> a :: next b
     
     path 
-    |> List.rev
     |> List.head
     |> fst
     |> next
@@ -57,7 +56,6 @@ let main argv =
                 |> toTuples
                 |> toGraph
 
-    let frontier = PriorityQueue.empty false
-                   |> PriorityQueue.insert (Decimal.Zero, argv.[0], "")
+    let frontier = PriorityQueue.empty false |> PriorityQueue.insert (Decimal.Zero, argv.[0], "")
     find argv.[1] graph frontier Set.empty [] |> Option.defaultValue List.empty |> getSolution |> printfn "%A"
     0
