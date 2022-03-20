@@ -35,13 +35,13 @@ let rec find dest graph (frontier: IPriorityQueue<Edge>) explored path =
     if frontier.IsEmpty then
         None
     else
-        let (_, node, parent), frontier' = PriorityQueue.pop frontier
+        let (distance, node, parent), frontier' = PriorityQueue.pop frontier
 
         if node = dest then
             Some ([(node, parent)] @ path)
         else 
             let explored' = Set.add node explored
-            let frontier'' = graph |> Map.find node |> List.fold (fun s n -> addToFrontier n explored' s) frontier'
+            let frontier'' = graph |> Map.find node |> List.fold (fun s (d, a, b) -> addToFrontier (distance + d, a, b) explored' s) frontier'
             find dest graph frontier'' explored' ([(node, parent)] @ path)
 
 // follow traversed paths from destination to source to find the optimal solution
