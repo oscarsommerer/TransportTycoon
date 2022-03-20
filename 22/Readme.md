@@ -5,7 +5,11 @@
 * Run with
 ```
 $ dotnet run Steamdrift Leverstorm
-["Steamdrift"; "Cogburg"; "Irondale"; "Copperhold"; "Leverstorm"]
+0.00h	DEPART	Steamdrift
+14.26h	ARRIVE	Cogburg
+24.81h	ARRIVE	Irondale
+31.88h	ARRIVE	Leverstorm
+
 ```
 
 Alternatively use the VSCode Devcontainer and run configuration
