@@ -1,9 +1,8 @@
 ﻿open System
 open Deedle
 open MathNet.Numerics
-open Deedle
 
-let normalizedTime (t: DateTime) = (t.DayOfWeek |> float) 
+let normalizeTime (t: DateTime) = t.DayOfWeek |> float 
 
 let evaluate model =
     let dfTest = Frame.ReadCsv("/workspaces/transport tycoon/23/s02e03_test.csv")
@@ -17,10 +16,10 @@ let evaluate model =
     let mse = dfTest?error.Sum() / (double dfTest.RowCount)
     dfTest, mse
 
-let toPoly (f: Frame<int, string>) =
+let getFittingPolynomialParameters (f: Frame<int, string>) =
     let xdata =
         f
-        |> Frame.mapRows (fun _ row -> row.GetAs<DateTime>("TIME") |> normalizedTime)
+        |> Frame.mapRows (fun _ row -> row.GetAs<DateTime>("TIME") |> normalizeTime)
         |> Series.values
         |> Seq.toArray
 
@@ -33,14 +32,13 @@ let model = fun (parameters: Frame<string, string>) (r: ObjectSeries<string>) ->
     let b = r.GetAs<string>("B")
     let parameters = parameters.[a, b] :?> double array
 
-    let day = r.GetAs<DateTime>("TIME") |> normalizedTime
+    let day = r.GetAs<DateTime>("TIME") |> normalizeTime
 
     parameters
     |> Array.mapi (fun i p -> (i, p))
     |> Array.fold (fun s (i, p) -> 
             s + (p * Math.Pow(day, i))
         ) 0.0
-
 
 [<EntryPoint>]
 let main argv =
@@ -50,7 +48,7 @@ let main argv =
         |> Frame.pivotTable 
             (fun k r -> r.GetAs<string>("A"))
             (fun k r -> r.GetAs<string>("B"))
-            toPoly
+            getFittingPolynomialParameters
 
     let _, mse = evaluate (model modelParameters)
 
