@@ -1,4 +1,4 @@
-# Transport Tycoon 2.1
+# Transport Tycoon 2.2
 
 ## Running the solution
 * Install .NET 6
